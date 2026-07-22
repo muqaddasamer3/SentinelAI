@@ -216,3 +216,28 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ==========================
+# SentinelAI Project
+# ==========================
+
+.env.*
+!.env.example
+
+.vscode/
+
+.idea/
+
+*.db
+
+*.sqlite3
+
+logs/
+
+uploads/
+
+models/
+
+data/
+
+*.bak
