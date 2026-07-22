@@ -4,3 +4,4 @@ numpy
 insightface
 torchreid
 mediapipe
+google-genai
