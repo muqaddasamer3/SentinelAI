@@ -1,0 +1,21 @@
+from fastapi import FastAPI
+
+from app.api.routers.health import router as health_router
+from app.core.config import settings
+
+app = FastAPI(
+    title=settings.APP_NAME,
+    description=settings.APP_DESCRIPTION,
+    version=settings.APP_VERSION,
+)
+
+
+@app.get("/", tags=["Root"])
+def root():
+    return {
+        "message": f"Welcome to {settings.APP_NAME}",
+        "status": "Running",
+    }
+
+
+app.include_router(health_router)
