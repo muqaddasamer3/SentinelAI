@@ -1,0 +1,71 @@
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+
+  background-size:60px 60px;
+
+  z-index:0;
+}
+
+.gradient{
+position:fixed;
+border-radius:50%;
+filter:blur(140px);
+opacity:.55;
+animation:float 12s infinite ease-in-out;
+z-index:0;
+}
+
+.gradient1{
+width:500px;
+height:500px;
+background:#00E5FF;
+top:-100px;
+left:-150px;
+}
+
+.gradient2{
+width:500px;
+height:500px;
+background:#6D28D9;
+bottom:-180px;
+right:-150px;
+animation-delay:2s;
+}
+
+.gradient3{
+width:350px;
+height:350px;
+background:#14F195;
+top:35%;
+left:55%;
+animation-delay:4s;
+}
+
+@keyframes float{
+
+0%{
+transform:translateY(0px) translateX(0px);
+}
+
+50%{
+transform:translateY(-60px) translateX(50px);
+}
+
+100%{
+transform:translateY(0px) translateX(0px);
+}
+
+}
+
+.noise{
+position:fixed;
+inset:0;
+background:radial-gradient(circle at 20% 20%,rgba(0,229,255,.05),transparent 30%),
+radial-gradient(circle at 80% 70%,rgba(124,58,237,.08),transparent 30%);
+pointer-events:none;
+z-index:0;
+}
