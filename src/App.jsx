@@ -5,6 +5,8 @@ import Register from "./pages/Register/Register";
 import CCTVUpload from "./pages/CCTVUpload/CCTVUpload";
 import IncidentDashboard from "./components/IncidentDashboard/IncidentDashboard";
 import FeedOverview from "./components/FeedOverview/FeedOverview";
+// import Footer from "./components/Footer/Footer";
+
 function App() {
   return (
     <BrowserRouter>
@@ -18,6 +20,7 @@ function App() {
           path="/incident-dashboard"
           element={<IncidentDashboard />}
         />
+    
       </Routes>
     </BrowserRouter>
   );
