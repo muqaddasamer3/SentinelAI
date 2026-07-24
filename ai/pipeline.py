@@ -1,6 +1,8 @@
 import cv2
 import os
 import json
+import uuid
+import numpy as np
 from datetime import datetime
 
 from ai.detection.tracker import PersonTracker
@@ -15,13 +17,15 @@ from app.database.models import Camera, Person, TrackingLog, Incident
 class SentinelPipeline:
     """
     Poora AI pipeline combine karta hai:
-    Detection + Tracking -> Face Recognition -> ReID (fallback) -> Gemma 4 summary
+    Detection + Tracking -> Face Recognition (auto-registration) -> ReID (fallback) -> Gemma 4 summary
     Performance ke liye: face recognition/ReID sirf har N frame pe chalte hain.
 
-    Note: ReID (TorchReID generic weights) abhi discriminative nahi hai,
-    is liye track_id ko hi stable identity ke tor par use kar rahe hain
-    jab tak face na mile. BoT-SORT tracking already reliable hai isi camera ke andar.
+    Face recognition ab "open-set" hai: koi bhi naya shakhs pehli baar dekha jaye to
+    automatically register ho jata hai (uska embedding save hota hai), aur agli baar
+    wahi shakhs kisi bhi camera pe aaye to embedding match se pehchan liya jata hai.
     """
+
+    FACE_MATCH_THRESHOLD = 0.5  # is se neeche similarity ho to "naya shakhs" mana jayega
 
     def __init__(self, camera_id: str = "Cam-01", heavy_process_every: int = 5):
         self.camera_id = camera_id
@@ -34,6 +38,65 @@ class SentinelPipeline:
         self.heavy_process_every = heavy_process_every
         self.frame_count = 0
 
+        self.known_embeddings = {}  # cache: person_code -> np.ndarray(512,)
+        self._load_known_embeddings()
+
+    # ==========================================
+    # FACE EMBEDDING MATCHING
+    # ==========================================
+
+    def _load_known_embeddings(self):
+        """
+        Startup par database se un saare persons ke embeddings load karta hai
+        jinka face_embedding pehle se save ho chuka hai (dusri sessions se).
+        """
+        db = SessionLocal()
+        try:
+            persons = db.query(Person).filter(Person.face_embedding.isnot(None)).all()
+            loaded = 0
+            for p in persons:
+                try:
+                    embedding = np.frombuffer(p.face_embedding, dtype=np.float32)
+                    if embedding.shape[0] != 512:  # buffalo_l embeddings 512-d hote hain
+                        print(f"Warning: '{p.person_code}' ka embedding invalid size hai ({embedding.shape[0]}), skip kar rahe hain.")
+                        continue
+                    self.known_embeddings[p.person_code] = embedding
+                    loaded += 1
+                except ValueError:
+                    print(f"Warning: '{p.person_code}' ka embedding corrupt hai, skip kar rahe hain.")
+            print(f"Loaded {loaded} known face embeddings from database.")
+        finally:
+            db.close()
+    @staticmethod
+    def _cosine_similarity(a, b):
+        return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+
+    def _match_embedding(self, embedding):
+        """
+        Diye gaye embedding ko saare known embeddings se compare karta hai.
+        Returns: (person_code or None, best_score)
+        """
+        best_code = None
+        best_score = 0.0
+
+        for code, known_embedding in self.known_embeddings.items():
+            score = self._cosine_similarity(embedding, known_embedding)
+            if score > best_score:
+                best_score = score
+                best_code = code
+
+        if best_score >= self.FACE_MATCH_THRESHOLD:
+            return best_code, best_score
+        return None, best_score
+
+    @staticmethod
+    def _generate_person_code():
+        return f"F_{uuid.uuid4().hex[:8]}"
+
+    # ==========================================
+    # FRAME PROCESSING
+    # ==========================================
+
     def process_frame(self, frame):
         self.frame_count += 1
         tracked_persons = self.tracker.track(frame)  # ye har frame pe chalega (halka hai)
@@ -41,7 +104,7 @@ class SentinelPipeline:
 
         run_heavy = (self.frame_count % self.heavy_process_every == 0)
 
-        face_results = self.face_recognizer.recognize(frame) if run_heavy else []
+        face_results = self.face_recognizer.detect_faces(frame) if run_heavy else []
 
         for person in tracked_persons:
             track_id = person["track_id"]
@@ -54,19 +117,35 @@ class SentinelPipeline:
             if person_crop.size == 0:
                 continue
 
-            # Agar heavy processing is frame pe chali, to naya pehchan karo
+            embedding = None
+            face_matched = False
+
             if run_heavy:
-                person_code = "Unknown"
+                # Is track ke bbox ke andar aane wala face dhoondo
+                matched_face = None
                 for face in face_results:
                     fx1, fy1, fx2, fy2 = face["bbox"]
                     if fx1 >= x1 and fy1 >= y1 and fx2 <= x2 and fy2 <= y2:
-                        person_code = face["person_code"]
+                        matched_face = face
                         break
 
-                # Face se pehchan nahi hui to track_id ko hi stable identity banao
-                # (ReID generic weights abhi discriminative nahi hain, isi liye track_id use kar rahe hain)
-                if person_code == "Unknown":
+                if matched_face is not None:
+                    embedding = matched_face["embedding"]
+                    matched_code, score = self._match_embedding(embedding)
+
+                    if matched_code is not None:
+                        # Pehle se registered shakhs — pehchan liya
+                        person_code = matched_code
+                        face_matched = True
+                    else:
+                        # Naya shakhs — automatically register karo
+                        person_code = self._generate_person_code()
+                        self.known_embeddings[person_code] = embedding
+                        face_matched = False  # pehli baar dekha gaya, isliye "match" nahi balke naya registration hai
+                else:
+                    # Face nahi mila (peeth ho sakti hai, angle kharab, etc.) — track_id se fallback
                     person_code = f"P_{track_id}"
+                    face_matched = False
 
                 self.track_person_codes[track_id] = person_code  # cache update
             else:
@@ -79,7 +158,9 @@ class SentinelPipeline:
                 "camera_id": self.camera_id,
                 "bbox": [x1, y1, x2, y2],
                 "entry_time": self.track_entry_times[track_id],
-                "confidence": person["confidence"]
+                "confidence": person["confidence"],
+                "face_matched": face_matched,
+                "embedding": embedding,  # None agar face nahi mila ya cached frame tha
             })
 
         return frame_results
@@ -120,14 +201,20 @@ class SentinelPipeline:
             db.refresh(camera)
         return camera
 
-    def _get_or_create_person(self, db, person_code, entry_time):
+    def _get_or_create_person(self, db, person_code, entry_time, embedding=None):
         person = db.query(Person).filter(Person.person_code == person_code).first()
         if not person:
             person = Person(
                 person_code=person_code,
                 first_seen=entry_time,
+                face_embedding=embedding.tobytes() if embedding is not None else None,
             )
             db.add(person)
+            db.commit()
+            db.refresh(person)
+        elif embedding is not None and person.face_embedding is None:
+            # Purana person hai lekin embedding save nahi thi — ab save kar do
+            person.face_embedding = embedding.tobytes()
             db.commit()
             db.refresh(person)
         return person
@@ -141,7 +228,10 @@ class SentinelPipeline:
         try:
             camera = self._get_or_create_camera(db)
             person = self._get_or_create_person(
-                db, person_data["person_code"], person_data["entry_time"]
+                db,
+                person_data["person_code"],
+                person_data["entry_time"],
+                embedding=person_data.get("embedding"),
             )
 
             log = TrackingLog(
@@ -150,7 +240,7 @@ class SentinelPipeline:
                 timestamp=datetime.now(),
                 event_type="detected",
                 confidence=person_data["confidence"],
-                face_matched=not person_data["person_code"].startswith("P_"),
+                face_matched=person_data.get("face_matched", False),
             )
             db.add(log)
             db.commit()
