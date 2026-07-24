@@ -7,6 +7,10 @@ import {
     Circle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
+import { useEffect } from "react";
+
+
 const feeds = [
     {
         id: 0,
@@ -42,7 +46,20 @@ const feeds = [
 
 export default function FeedOverview() {
     const [active, setActive] = useState(0);
-    const navigate = useNavigate();
+    const [logs, setLogs] = useState([]);
+    const navigate = useNavigate(); 
+    useEffect(() => {
+  async function fetchLogs() {
+    try {
+      const response = await api.get("/incidents");
+      setLogs(response.data);
+    } catch (error) {
+      console.error("Error fetching tracking logs:", error);
+    }
+  }
+
+  fetchLogs();
+}, []);
     return (
         <section className="py-16">
 
@@ -198,7 +215,28 @@ export default function FeedOverview() {
                                         </span>
 
                                     </div>
+<div className="mt-6 rounded-2xl bg-[#0f141b] p-5">
+  <h3 className="mb-4 text-xl text-white">
+    Live Tracking Logs
+  </h3>
 
+  {logs.length === 0 ? (
+    <p className="text-slate-400">
+      No tracking logs found.
+    </p>
+  ) : (
+    logs.map((log) => (
+      <div
+        key={log.id}
+        className="mb-3 rounded-lg border border-white/10 p-3"
+      >
+        <p className="text-white">
+          {log.person_name}
+        </p>
+      </div>
+    ))
+  )}
+</div>
                                 </div>
 
                             ))}
