@@ -11,21 +11,21 @@ import {
 export default function DashboardPreview() {
     return (
         <section id="dashboard" className="py-24">
-        <motion.div
-            initial={{ opacity: 0, y: 70 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: .3, duration: .9 }}
-            className="relative mx-auto mt-20 w-[100%] max-w-[1700px]"
-        >
+            <motion.div
+                initial={{ opacity: 0, y: 70 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: .3, duration: .9 }}
+                className="relative mx-auto mt-20 w-[100%] max-w-[1700px]"
+            >
 
-            {/* Glow */}
+                {/* Glow */}
 
-            <div className="absolute -inset-2 rounded-[36px] bg-cyan-400/20 blur-3xl" />
+                <div className="absolute -inset-2 rounded-[36px] bg-cyan-400/20 blur-3xl" />
 
-            {/* Main Card */}
+                {/* Main Card */}
 
-            <div
-                className="
+                <div
+                    className="
         relative
         overflow-hidden
         rounded-[32px]
@@ -34,37 +34,37 @@ export default function DashboardPreview() {
         bg-[#0B0E13]/95
         backdrop-blur-3xl
         shadow-[0_0_80px_rgba(0,255,255,.08)]"
-            >
+                >
 
-                <div className="grid grid-cols-12">
+                    <div className="grid grid-cols-12">
 
-                    {/* Sidebar */}
+                        {/* Sidebar */}
 
-                    <aside className="col-span-2 border-r border-white/5 p-8">
+                        <aside className="col-span-2 border-r border-white/5 p-8">
 
-                        <h2 className="flex items-center gap-3 text-lg font-semibold">
+                            <h2 className="flex items-center gap-3 text-lg font-semibold">
 
-                            <LayoutDashboard className="text-cyan-400" />
+                                <LayoutDashboard className="text-cyan-400" />
 
-                            Dashboard
+                                Dashboard
 
-                        </h2>
+                            </h2>
 
-                        <div className="mt-10 space-y-3">
+                            <div className="mt-10 space-y-3">
 
-                            {[
-                                "Dashboard",
-                                "Surveillance",
-                                "Alerts",
-                                "Analytics",
-                                "Persons",
+                                {[
+                                    "Dashboard",
+                                    "Surveillance",
+                                    "Alerts",
+                                    "Analytics",
+                                    "Persons",
 
-                                "Settings",
-                            ].map((item, index) => (
+                                    "Settings",
+                                ].map((item, index) => (
 
-                                <button
-                                    key={item}
-                                    className={`
+                                    <button
+                                        key={item}
+                                        className={`
       w-full
       rounded-xl
       px-4
@@ -74,42 +74,42 @@ export default function DashboardPreview() {
       duration-300
 
       ${index === 0
-                                            ? "bg-cyan-400/10 text-cyan-300 border border-cyan-400/20"
-                                            : "text-slate-400 hover:bg-white/5 hover:text-white"
-                                        }
+                                                ? "bg-cyan-400/10 text-cyan-300 border border-cyan-400/20"
+                                                : "text-slate-400 hover:bg-white/5 hover:text-white"
+                                            }
     `}
-                                >
-                                    {item}
-                                </button>
+                                    >
+                                        {item}
+                                    </button>
 
-                            ))}
-
-                        </div>
-
-                    </aside>
-
-                    {/* Main */}
-
-                    <div className="col-span-6 p-8">
-
-                        {/* Top */}
-
-                        <div className="flex items-center justify-between">
-
-                            <div>
-
-                                <h2 className="text-3xl font-semibold text-white">
-                                    Dashboard Overview
-                                </h2>
-
-                                <p className="mt-2 text-slate-500">
-                                    Customize your monitoring view
-                                </p>
+                                ))}
 
                             </div>
 
-                            <div
-                                className="
+                        </aside>
+
+                        {/* Main */}
+
+                        <div className="col-span-6 p-8">
+
+                            {/* Top */}
+
+                            <div className="flex items-center justify-between">
+
+                                <div>
+
+                                    <h2 className="text-3xl font-semibold text-white">
+                                        Dashboard Overview
+                                    </h2>
+
+                                    <p className="mt-2 text-slate-500">
+                                        Customize your monitoring view
+                                    </p>
+
+                                </div>
+
+                                <div
+                                    className="
 flex
 items-center
 gap-3
@@ -122,117 +122,117 @@ py-4
 w-[260px]
 ">
 
-                                <Search size={18} className="text-slate-500" />
+                                    <Search size={18} className="text-slate-500" />
 
-                                <input
-                                    placeholder="Search widgets"
-                                    className="
+                                    <input
+                                        placeholder="Search widgets"
+                                        className="
 bg-transparent
 outline-none
 text-slate-400
 placeholder:text-slate-600
 w-full"
+                                    />
+
+                                </div>
+
+                            </div>
+
+                            {/* Widgets */}
+
+                            <div className="mt-8 grid grid-cols-4 gap-4">
+                                <Widget
+                                    icon={<Camera />}
+                                    title="Online Cameras"
+                                    value="24"
+                                />
+
+                                <Widget
+                                    icon={<Bell />}
+                                    title="Alerts"
+                                    value="08"
+                                />
+
+                                <Widget
+                                    icon={<Activity />}
+                                    title="Detection"
+                                    value="98%"
+                                />
+
+                                <Widget
+                                    icon={<Settings />}
+                                    title="System Health"
+                                    value="99%"
                                 />
 
                             </div>
 
-                        </div>
+                            {/* Camera */}
 
-                        {/* Widgets */}
+                            <div className="mt-8">
 
-                        <div className="mt-8 grid grid-cols-4 gap-4">
-                            <Widget
-                                icon={<Camera />}
-                                title="Online Cameras"
-                                value="24"
-                            />
+                                <div className="mb-4 flex items-center justify-between">
 
-                            <Widget
-                                icon={<Bell />}
-                                title="Alerts"
-                                value="08"
-                            />
+                                    <div>
 
-                            <Widget
-                                icon={<Activity />}
-                                title="Detection"
-                                value="98%"
-                            />
+                                        <h3 className="text-xl font-semibold text-white">
+                                            Live CCTV Feed
+                                        </h3>
 
-                            <Widget
-                                icon={<Settings />}
-                                title="System Health"
-                                value="99%"
-                            />
+                                        <p className="text-slate-400 text-sm">
+                                            Camera 01 • Main Entrance
+                                        </p>
 
-                        </div>
+                                    </div>
 
-                        {/* Camera */}
+                                    <div className="flex items-center gap-2">
 
-                        <div className="mt-8">
+                                        <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse"></div>
 
-                            <div className="mb-4 flex items-center justify-between">
+                                        <span className="text-red-400 text-sm">
+                                            LIVE
+                                        </span>
 
-                                <div>
-
-                                    <h3 className="text-xl font-semibold text-white">
-                                        Live CCTV Feed
-                                    </h3>
-
-                                    <p className="text-slate-400 text-sm">
-                                        Camera 01 • Main Entrance
-                                    </p>
+                                    </div>
 
                                 </div>
 
-                                <div className="flex items-center gap-2">
-
-                                    <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse"></div>
-
-                                    <span className="text-red-400 text-sm">
-                                        LIVE
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                            <div
-                                className="
+                                <div
+                                    className="
     overflow-hidden
     rounded-3xl
     border
     border-white/10
     bg-black">
 
-                                <img
-                                    src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600"
-                                    className="h-[350px] w-full object-cover"
-                                    alt=""
-                                />
+                                    <img
+                                        src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600"
+                                        className="h-[350px] w-full object-cover"
+                                        alt=""
+                                    />
 
 
-                            </div> 
-                            <div className="mt-4 grid grid-cols-4 gap-4">
+                                </div>
+                                <div className="mt-4 grid grid-cols-4 gap-4">
 
-                                <SmallInfo title="Status" value="Online" />
+                                    <SmallInfo title="Status" value="Online" />
 
-                                <SmallInfo title="FPS" value="30" />
+                                    <SmallInfo title="FPS" value="30" />
 
-                                <SmallInfo title="Objects" value="12" />
+                                    <SmallInfo title="Objects" value="12" />
 
-                                <SmallInfo title="Confidence" value="98%" />
+                                    <SmallInfo title="Confidence" value="98%" />
+
+                                </div>
 
                             </div>
-                            
+
+
                         </div>
+                        <div className="col-span-3">
 
-
-                    </div>
-<div className="col-span-4">
-
-  <div
-    className="
+                            <div
+                                className="
     rounded-3xl
     border
     border-white/10
@@ -241,21 +241,21 @@ w-full"
     sticky
     top-28">
 
-    <h3 className="text-xl font-semibold text-white">
+                                <h3 className="text-xl font-semibold text-white">
 
-      Add Widgets
+                                    Add Widgets
 
-    </h3>
+                                </h3>
 
-    <p className="mt-2 text-sm text-slate-500">
+                                <p className="mt-2 text-sm text-slate-500">
 
-      Drag and drop widgets onto your dashboard
+                                    Drag and drop widgets onto your dashboard
 
-    </p>
+                                </p>
 
-    <input
-      placeholder="Search widgets..."
-      className="
+                                <input
+                                    placeholder="Search widgets..."
+                                    className="
       mt-6
       w-full
       rounded-xl
@@ -267,45 +267,45 @@ w-full"
       outline-none
       text-slate-300
       placeholder:text-slate-600"
-    />
+                                />
 
-    <div className="mt-8 space-y-4">
+                                <div className="mt-8 space-y-4">
 
-      <DashboardWidget
-        title="Online Cameras"
-        subtitle="System"
-        size="4 x 2"
-      />
+                                    <DashboardWidget
+                                        title="Online Cameras"
+                                        subtitle="System"
+                                        size="4 x 2"
+                                    />
 
-      <DashboardWidget
-        title="Offline Cameras"
-        subtitle="System"
-        size="4 x 2"
-      />
+                                    <DashboardWidget
+                                        title="Offline Cameras"
+                                        subtitle="System"
+                                        size="4 x 2"
+                                    />
 
-      <DashboardWidget
-        title="Storage Server"
-        subtitle="System"
-        size="4 x 2"
-      />
+                                    <DashboardWidget
+                                        title="Storage Server"
+                                        subtitle="System"
+                                        size="4 x 2"
+                                    />
 
-      <DashboardWidget
-        title="Network Usage"
-        subtitle="System"
-        size="4 x 2"
-      />
+                                    <DashboardWidget
+                                        title="Network Usage"
+                                        subtitle="System"
+                                        size="4 x 2"
+                                    />
 
-    </div>
+                                </div>
 
-  </div>
+                            </div>
 
-</div>
+                        </div>
+
+                    </div>
 
                 </div>
 
-            </div>
-
-        </motion.div>
+            </motion.div>
         </section>
     );
 }

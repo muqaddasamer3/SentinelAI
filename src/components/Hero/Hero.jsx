@@ -4,6 +4,7 @@ import {
   Play,
   ShieldCheck,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import DashboardPreview from "../DashboardPreview/DashboardPreview";
 
@@ -109,7 +110,20 @@ export default function Hero() {
       Watch Live Demo
 
     </button>
-
+<Link
+  to="/upload"
+  className="
+  rounded-xl
+  bg-cyan-400
+  px-7
+  py-4
+  font-semibold
+  text-black
+  hover:scale-105
+  transition"
+>
+  Upload CCTV Clip
+</Link>
   </div>
 
 </motion.div>
