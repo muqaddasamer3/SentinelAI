@@ -101,7 +101,7 @@ class SentinelPipeline:
 
 
 if __name__ == "__main__":
-    video_path = "data/videos/test3.mp4"
+    video_path = "data/videos/test1.mp4"
 
     if not os.path.exists(video_path):
         print(f"Error: '{video_path}' nahi mili.")
