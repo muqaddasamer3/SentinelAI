@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-
 from app.api.routers.health import router as health_router
 from app.api.routers.camera import router as camera_router
 from app.core.config import settings
