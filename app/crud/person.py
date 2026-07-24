@@ -1,22 +1,34 @@
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 
 from app.database.models import Person
+from app.schemas.person import PersonCreate, PersonUpdate
 
 
-def create_person(db: Session, person: Person):
+def create_person(db: Session, person: PersonCreate):
     """
     Create a new person.
     """
-    db.add(person)
+
+    db_person = Person(
+        person_code=person.person_code,
+        face_embedding=person.face_embedding,
+        first_seen=person.first_seen,
+    )
+
+    db.add(db_person)
     db.commit()
-    db.refresh(person)
-    return person
+    db.refresh(db_person)
+
+    return db_person
 
 
-def get_person(db: Session, person_id):
+def get_person(db: Session, person_id: UUID):
     """
-    Get a person by ID.
+    Get person by ID.
     """
+
     return db.query(Person).filter(Person.id == person_id).first()
 
 
@@ -24,37 +36,57 @@ def get_persons(db: Session):
     """
     Get all persons.
     """
+
     return db.query(Person).all()
 
 
-def update_person(db: Session, person_id, updated_data: dict):
+def update_person(
+    db: Session,
+    person_id: UUID,
+    person: PersonUpdate,
+):
     """
-    Update a person.
+    Update person.
     """
-    person = db.query(Person).filter(Person.id == person_id).first()
 
-    if not person:
+    db_person = (
+        db.query(Person)
+        .filter(Person.id == person_id)
+        .first()
+    )
+
+    if not db_person:
         return None
 
-    for key, value in updated_data.items():
-        setattr(person, key, value)
+    update_data = person.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_person, key, value)
 
     db.commit()
-    db.refresh(person)
+    db.refresh(db_person)
 
-    return person
+    return db_person
 
 
-def delete_person(db: Session, person_id):
+def delete_person(
+    db: Session,
+    person_id: UUID,
+):
     """
-    Delete a person.
+    Delete person.
     """
-    person = db.query(Person).filter(Person.id == person_id).first()
 
-    if not person:
+    db_person = (
+        db.query(Person)
+        .filter(Person.id == person_id)
+        .first()
+    )
+
+    if not db_person:
         return None
 
-    db.delete(person)
+    db.delete(db_person)
     db.commit()
 
-    return person
+    return db_person

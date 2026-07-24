@@ -1,22 +1,36 @@
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 
 from app.database.models import Alert
+from app.schemas.alert import (
+    AlertCreate,
+    AlertUpdate,
+)
 
 
-def create_alert(db: Session, alert: Alert):
-    """
-    Create a new alert.
-    """
-    db.add(alert)
+def create_alert(
+    db: Session,
+    alert: AlertCreate,
+):
+    db_alert = Alert(
+        incident_id=alert.incident_id,
+        alert_type=alert.alert_type,
+        message=alert.message,
+        status=alert.status,
+    )
+
+    db.add(db_alert)
     db.commit()
-    db.refresh(alert)
-    return alert
+    db.refresh(db_alert)
+
+    return db_alert
 
 
-def get_alert(db: Session, alert_id):
-    """
-    Get an alert by ID.
-    """
+def get_alert(
+    db: Session,
+    alert_id: UUID,
+):
     return (
         db.query(Alert)
         .filter(Alert.id == alert_id)
@@ -25,52 +39,48 @@ def get_alert(db: Session, alert_id):
 
 
 def get_alerts(db: Session):
-    """
-    Get all alerts.
-    """
     return db.query(Alert).all()
 
 
 def update_alert(
     db: Session,
-    alert_id,
-    updated_data: dict,
+    alert_id: UUID,
+    alert: AlertUpdate,
 ):
-    """
-    Update an alert.
-    """
-    alert = (
+    db_alert = (
         db.query(Alert)
         .filter(Alert.id == alert_id)
         .first()
     )
 
-    if not alert:
+    if not db_alert:
         return None
 
-    for key, value in updated_data.items():
-        setattr(alert, key, value)
+    update_data = alert.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_alert, key, value)
 
     db.commit()
-    db.refresh(alert)
+    db.refresh(db_alert)
 
-    return alert
+    return db_alert
 
 
-def delete_alert(db: Session, alert_id):
-    """
-    Delete an alert.
-    """
-    alert = (
+def delete_alert(
+    db: Session,
+    alert_id: UUID,
+):
+    db_alert = (
         db.query(Alert)
         .filter(Alert.id == alert_id)
         .first()
     )
 
-    if not alert:
+    if not db_alert:
         return None
 
-    db.delete(alert)
+    db.delete(db_alert)
     db.commit()
 
-    return alert
+    return db_alert

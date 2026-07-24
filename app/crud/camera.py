@@ -1,23 +1,37 @@
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 
 from app.database.models import Camera
+from app.schemas.camera import CameraCreate, CameraUpdate
 
 
-def create_camera(db: Session, camera: Camera):
+def create_camera(db: Session, camera: CameraCreate):
     """
     Create a new camera.
     """
-    db.add(camera)
+
+    db_camera = Camera(
+        camera_id=camera.camera_id,
+        camera_name=camera.camera_name,
+        location=camera.location,
+        status=camera.status,
+    )
+
+    db.add(db_camera)
     db.commit()
-    db.refresh(camera)
-    return camera
+    db.refresh(db_camera)
+
+    return db_camera
 
 
-def get_camera(db: Session, camera_id):
+def get_camera(db: Session, camera_id: UUID):
     """
-    Get a camera by its ID.
+    Get camera by ID.
     """
+
     return db.query(Camera).filter(Camera.id == camera_id).first()
+
 
 def get_cameras(db: Session):
     """
@@ -26,35 +40,54 @@ def get_cameras(db: Session):
 
     return db.query(Camera).all()
 
-def update_camera(db: Session, camera_id, updated_data: dict):
+
+def update_camera(
+    db: Session,
+    camera_id: UUID,
+    camera: CameraUpdate,
+):
     """
-    Update a camera.
+    Update camera.
     """
 
-    camera = db.query(Camera).filter(Camera.id == camera_id).first()
+    db_camera = (
+        db.query(Camera)
+        .filter(Camera.id == camera_id)
+        .first()
+    )
 
-    if not camera:
+    if not db_camera:
         return None
 
-    for key, value in updated_data.items():
-        setattr(camera, key, value)
+    update_data = camera.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_camera, key, value)
 
     db.commit()
-    db.refresh(camera)
+    db.refresh(db_camera)
 
-    return camera
+    return db_camera
 
-def delete_camera(db: Session, camera_id):
+
+def delete_camera(
+    db: Session,
+    camera_id: UUID,
+):
     """
-    Delete a camera.
+    Delete camera.
     """
 
-    camera = db.query(Camera).filter(Camera.id == camera_id).first()
+    db_camera = (
+        db.query(Camera)
+        .filter(Camera.id == camera_id)
+        .first()
+    )
 
-    if not camera:
+    if not db_camera:
         return None
 
-    db.delete(camera)
+    db.delete(db_camera)
     db.commit()
 
-    return camera
+    return db_camera

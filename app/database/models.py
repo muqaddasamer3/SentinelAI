@@ -1,4 +1,5 @@
 import uuid
+from sqlalchemy import Boolean
 
 from sqlalchemy import (
     String,
@@ -216,25 +217,28 @@ class Alert(Base):
         nullable=False,
     )
 
-    recipient: Mapped[str] = mapped_column(
+    alert_type: Mapped[str] = mapped_column(
         String(100),
+        nullable=False,
+    )
+
+    message: Mapped[str] = mapped_column(
+        Text,
         nullable=False,
     )
 
     status: Mapped[str] = mapped_column(
         String(20),
+        nullable=False,
         default="Pending",
-    )
-
-    sent_at: Mapped[DateTime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
     )
 
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
     )
+
+    incident = relationship("Incident")
     
 # Define the User model
 
@@ -247,9 +251,8 @@ class User(Base):
         default=uuid.uuid4
     )
 
-    username = Column(
-        String(100),
-        unique=True,
+    full_name = Column(
+        String(255),
         nullable=False
     )
 
@@ -266,6 +269,13 @@ class User(Base):
 
     role = Column(
         String(50),
+        nullable=False,
+        default="Security Officer"
+    )
+
+    is_active = Column(
+        Boolean,
+        default=True,
         nullable=False
     )
 
