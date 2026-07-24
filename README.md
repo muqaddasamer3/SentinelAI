@@ -1,16 +1,54 @@
-# React + Vite
+# 🛡️ SentinelAI
+### Smart Incident Response & Safety Monitoring System — powered by Gemma 4
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Status](https://img.shields.io/badge/status-in%20development-yellow)
+![Python](https://img.shields.io/badge/python-3.11-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📌 Overview
+**SentinelAI** is an AI-powered safety monitoring system that detects incidents in real-time and triggers smart, automated responses — built to keep people safe, not to watch them.
 
-## React Compiler
+Instead of framing itself as "surveillance," SentinelAI focuses on **incident response**: recognizing when something goes wrong (a fall, an intrusion, an unsafe situation) and alerting the right people, fast.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## ✨ Features
+- 🎯 Real-time incident/anomaly detection
+- 🚨 Smart alert & response pipeline
+- 🧠 Powered by **Gemma 4**
+- ⚡ Lightweight, fast inference pipeline
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🛠️ Tech Stack
+| Layer | Tech |
+|---|---|
+| AI Model | Gemma 4 |
+| Language | Python 3.11 |
+| Backend | FastAPI |
+| Frontend | React + Vite |
+| Database | PostgreSQL (Supabase) |
+| Deployment | TBD |
+
+---
+
+## 📂 Project Structure 
+---
+
+## 👥 Team
+- **Muqaddas** — AI / Computer Vision Pipeline Lead
+- **Arslan Shafiq** — Backend (FastAPI)
+- **Mueeza** — Frontend / UI
+- **Musaab Amir** — Database Design
+
+---
+
+## 🚧 Status
+This project is actively under development for a hackathon/competition submission.
+
+---
+
+## 📄 License
+MIT
