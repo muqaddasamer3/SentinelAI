@@ -49,6 +49,7 @@ class SentinelPipeline:
         """
         Startup par database se un saare persons ke embeddings load karta hai
         jinka face_embedding pehle se save ho chuka hai (dusri sessions se).
+        Corrupt ya invalid-size embeddings ko skip kar deta hai.
         """
         db = SessionLocal()
         try:
@@ -57,7 +58,7 @@ class SentinelPipeline:
             for p in persons:
                 try:
                     embedding = np.frombuffer(p.face_embedding, dtype=np.float32)
-                    if embedding.shape[0] != 512:  # buffalo_l embeddings 512-d hote hain
+                    if embedding.shape[0] != 512:
                         print(f"Warning: '{p.person_code}' ka embedding invalid size hai ({embedding.shape[0]}), skip kar rahe hain.")
                         continue
                     self.known_embeddings[p.person_code] = embedding
@@ -67,6 +68,7 @@ class SentinelPipeline:
             print(f"Loaded {loaded} known face embeddings from database.")
         finally:
             db.close()
+
     @staticmethod
     def _cosine_similarity(a, b):
         return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
@@ -121,7 +123,6 @@ class SentinelPipeline:
             face_matched = False
 
             if run_heavy:
-                # Is track ke bbox ke andar aane wala face dhoondo
                 matched_face = None
                 for face in face_results:
                     fx1, fy1, fx2, fy2 = face["bbox"]
@@ -134,22 +135,18 @@ class SentinelPipeline:
                     matched_code, score = self._match_embedding(embedding)
 
                     if matched_code is not None:
-                        # Pehle se registered shakhs — pehchan liya
                         person_code = matched_code
                         face_matched = True
                     else:
-                        # Naya shakhs — automatically register karo
                         person_code = self._generate_person_code()
                         self.known_embeddings[person_code] = embedding
-                        face_matched = False  # pehli baar dekha gaya, isliye "match" nahi balke naya registration hai
+                        face_matched = False
                 else:
-                    # Face nahi mila (peeth ho sakti hai, angle kharab, etc.) — track_id se fallback
                     person_code = f"P_{track_id}"
                     face_matched = False
 
-                self.track_person_codes[track_id] = person_code  # cache update
+                self.track_person_codes[track_id] = person_code
             else:
-                # Purana cached result use karo (heavy processing skip)
                 person_code = self.track_person_codes.get(track_id, f"P_{track_id}")
 
             frame_results.append({
@@ -160,15 +157,22 @@ class SentinelPipeline:
                 "entry_time": self.track_entry_times[track_id],
                 "confidence": person["confidence"],
                 "face_matched": face_matched,
-                "embedding": embedding,  # None agar face nahi mila ya cached frame tha
+                "embedding": embedding,
             })
 
         return frame_results
 
     def generate_incident_json(self, person_data, zone="restricted_entrance", severity="medium"):
+        exit_time = datetime.now().isoformat()
+        entry_dt = datetime.fromisoformat(person_data["entry_time"])
+        exit_dt = datetime.fromisoformat(exit_time)
+        duration_seconds = int((exit_dt - entry_dt).total_seconds())
+
         description = (
-            f"Person {person_data['person_code']} detected on {person_data['camera_id']} "
-            f"in zone '{zone}' since {person_data['entry_time']}."
+            f"Person {person_data['person_code']} detected on camera {person_data['camera_id']} "
+            f"in the '{zone}' zone. First seen at {person_data['entry_time']}, "
+            f"present for approximately {duration_seconds} seconds so far, "
+            f"detection confidence {person_data['confidence']}."
         )
         summary = analyze_incident(description)
 
@@ -176,7 +180,8 @@ class SentinelPipeline:
             "person_code": person_data["person_code"],
             "camera_id": person_data["camera_id"],
             "entry_time": person_data["entry_time"],
-            "exit_time": datetime.now().isoformat(),
+            "exit_time": exit_time,
+            "duration_seconds": duration_seconds,
             "zone": zone,
             "confidence": person_data["confidence"],
             "incident_summary": summary,
@@ -213,7 +218,6 @@ class SentinelPipeline:
             db.commit()
             db.refresh(person)
         elif embedding is not None and person.face_embedding is None:
-            # Purana person hai lekin embedding save nahi thi — ab save kar do
             person.face_embedding = embedding.tobytes()
             db.commit()
             db.refresh(person)
@@ -309,7 +313,6 @@ if __name__ == "__main__":
                     cv2.putText(frame, label, (x1, y1 - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                    # 👇 Database mein tracking log save karna
                     try:
                         pipeline.save_tracking_log(res)
                     except Exception as e:
@@ -317,11 +320,11 @@ if __name__ == "__main__":
 
                 cv2.imshow("SentinelAI Pipeline", frame)
 
-                if frame_count % 100 == 0 and results:
+                incident_interval = int(os.getenv("INCIDENT_CHECK_INTERVAL", "100"))
+                if frame_count % incident_interval == 0 and results:
                     incident = pipeline.generate_incident_json(results[0])
                     print(json.dumps(incident, indent=2))
 
-                    # 👇 Database mein incident save karna
                     try:
                         log = pipeline.save_tracking_log(results[0])
                         pipeline.save_incident(incident, log.id)
