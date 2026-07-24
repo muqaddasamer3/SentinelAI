@@ -8,6 +8,9 @@ from ai.face.face_recognizer import FaceRecognizer
 from ai.reid.reid_matcher import ReIDMatcher
 from ai.gemma.gemma_service import analyze_incident
 
+from app.database.session import SessionLocal
+from app.database.models import Camera, Person, TrackingLog, Incident
+
 
 class SentinelPipeline:
     """
@@ -99,9 +102,93 @@ class SentinelPipeline:
             "severity": severity
         }
 
+    # ==========================================
+    # DATABASE METHODS (Supabase / PostgreSQL)
+    # ==========================================
+
+    def _get_or_create_camera(self, db):
+        camera = db.query(Camera).filter(Camera.camera_id == self.camera_id).first()
+        if not camera:
+            camera = Camera(
+                camera_id=self.camera_id,
+                camera_name=self.camera_id,
+                location="Unknown",
+                status="Active",
+            )
+            db.add(camera)
+            db.commit()
+            db.refresh(camera)
+        return camera
+
+    def _get_or_create_person(self, db, person_code, entry_time):
+        person = db.query(Person).filter(Person.person_code == person_code).first()
+        if not person:
+            person = Person(
+                person_code=person_code,
+                first_seen=entry_time,
+            )
+            db.add(person)
+            db.commit()
+            db.refresh(person)
+        return person
+
+    def save_tracking_log(self, person_data):
+        """
+        Ek tracked person ka record 'tracking_logs' table mein save karta hai.
+        Returns the saved TrackingLog object (with its id).
+        """
+        db = SessionLocal()
+        try:
+            camera = self._get_or_create_camera(db)
+            person = self._get_or_create_person(
+                db, person_data["person_code"], person_data["entry_time"]
+            )
+
+            log = TrackingLog(
+                person_id=person.id,
+                camera_id=camera.id,
+                timestamp=datetime.now(),
+                event_type="detected",
+                confidence=person_data["confidence"],
+                face_matched=not person_data["person_code"].startswith("P_"),
+            )
+            db.add(log)
+            db.commit()
+            db.refresh(log)
+            return log
+        finally:
+            db.close()
+
+    def save_incident(self, incident_data, tracking_log_id):
+        """
+        Incident ka record 'incidents' table mein save karta hai.
+        """
+        db = SessionLocal()
+        try:
+            camera = self._get_or_create_camera(db)
+            person = self._get_or_create_person(
+                db, incident_data["person_code"], incident_data["entry_time"]
+            )
+
+            incident = Incident(
+                tracking_log_id=tracking_log_id,
+                person_id=person.id,
+                camera_id=camera.id,
+                incident_type="unauthorized_access",
+                summary=incident_data["incident_summary"],
+                severity=incident_data["severity"],
+                timestamp=datetime.now(),
+            )
+            db.add(incident)
+            db.commit()
+            db.refresh(incident)
+            return incident
+        finally:
+            db.close()
+
 
 if __name__ == "__main__":
-    video_path = "data/videos/test1.mp4"
+    video_path = "data/videos/test2.mp4"
 
     if not os.path.exists(video_path):
         print(f"Error: '{video_path}' nahi mili.")
@@ -132,11 +219,25 @@ if __name__ == "__main__":
                     cv2.putText(frame, label, (x1, y1 - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
+                    # 👇 Database mein tracking log save karna
+                    try:
+                        pipeline.save_tracking_log(res)
+                    except Exception as e:
+                        print(f"⚠️ DB save error (tracking_log): {e}")
+
                 cv2.imshow("SentinelAI Pipeline", frame)
 
                 if frame_count % 100 == 0 and results:
                     incident = pipeline.generate_incident_json(results[0])
                     print(json.dumps(incident, indent=2))
+
+                    # 👇 Database mein incident save karna
+                    try:
+                        log = pipeline.save_tracking_log(results[0])
+                        pipeline.save_incident(incident, log.id)
+                        print("✅ Incident saved to database.")
+                    except Exception as e:
+                        print(f"⚠️ DB save error (incident): {e}")
 
                 if cv2.waitKey(delay) & 0xFF == ord('q'):
                     break
