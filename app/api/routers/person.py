@@ -3,6 +3,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.auth.security import verify_token
+
 from app.crud.person import (
     create_person,
     delete_person,
@@ -10,7 +12,9 @@ from app.crud.person import (
     get_persons,
     update_person,
 )
+
 from app.database.session import get_db
+
 from app.schemas.person import (
     PersonCreate,
     PersonResponse,
@@ -31,6 +35,7 @@ router = APIRouter(
 def create_new_person(
     person: PersonCreate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
     return create_person(db=db, person=person)
 
@@ -41,6 +46,7 @@ def create_new_person(
 )
 def read_persons(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
     return get_persons(db)
 
@@ -52,6 +58,7 @@ def read_persons(
 def read_person(
     person_id: UUID,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
     person = get_person(db, person_id)
 
@@ -72,6 +79,7 @@ def edit_person(
     person_id: UUID,
     person: PersonUpdate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
     updated_person = update_person(
         db,
@@ -95,6 +103,7 @@ def edit_person(
 def remove_person(
     person_id: UUID,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
     deleted_person = delete_person(
         db,

@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 
+from app.auth.security import verify_token
+
 from app.crud.incident import (
     create_incident,
     get_incident,
@@ -19,10 +21,12 @@ from app.schemas.incident import (
     IncidentResponse,
 )
 
+
 router = APIRouter(
     prefix="/incidents",
     tags=["Incidents"],
 )
+
 
 
 @router.post(
@@ -33,8 +37,13 @@ router = APIRouter(
 def create_new_incident(
     incident: IncidentCreate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
-    return create_incident(db, incident)
+    return create_incident(
+        db,
+        incident,
+    )
+
 
 
 @router.get(
@@ -43,8 +52,10 @@ def create_new_incident(
 )
 def read_incidents(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
     return get_incidents(db)
+
 
 
 @router.get(
@@ -54,8 +65,13 @@ def read_incidents(
 def read_incident(
     incident_id: UUID,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
-    incident = get_incident(db, incident_id)
+
+    incident = get_incident(
+        db,
+        incident_id,
+    )
 
     if incident is None:
         raise HTTPException(
@@ -66,6 +82,7 @@ def read_incident(
     return incident
 
 
+
 @router.put(
     "/{incident_id}",
     response_model=IncidentResponse,
@@ -74,7 +91,9 @@ def edit_incident(
     incident_id: UUID,
     incident: IncidentUpdate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
+
     updated = update_incident(
         db,
         incident_id,
@@ -90,6 +109,7 @@ def edit_incident(
     return updated
 
 
+
 @router.delete(
     "/{incident_id}",
     response_model=IncidentResponse,
@@ -97,7 +117,9 @@ def edit_incident(
 def remove_incident(
     incident_id: UUID,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
+
     deleted = delete_incident(
         db,
         incident_id,

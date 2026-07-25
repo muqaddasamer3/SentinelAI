@@ -2,7 +2,12 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.database.models import Person
+from sqlalchemy import func
+
+from app.database.models import (
+    Person,
+    TrackingLog,
+)
 from app.schemas.person import PersonCreate, PersonUpdate
 
 
@@ -24,20 +29,93 @@ def create_person(db: Session, person: PersonCreate):
     return db_person
 
 
-def get_person(db: Session, person_id: UUID):
-    """
-    Get person by ID.
-    """
+def get_person(
+    db: Session,
+    person_id: UUID,
+):
 
-    return db.query(Person).filter(Person.id == person_id).first()
+    person = (
+        db.query(Person)
+        .filter(Person.id == person_id)
+        .first()
+    )
+
+    if not person:
+        return None
+
+    logs = (
+        db.query(TrackingLog)
+        .filter(
+            TrackingLog.person_id == person.id
+        )
+        .order_by(
+            TrackingLog.timestamp.desc()
+        )
+        .all()
+    )
+
+    person.last_seen = (
+        logs[0].timestamp if logs else None
+    )
+
+    person.total_detections = len(logs)
+
+    person.cameras_visited = len(
+        {
+            log.camera_id
+            for log in logs
+        }
+    )
+
+    person.status = (
+        "Inside"
+        if logs
+        else "Unknown"
+    )
+
+    return person
 
 
 def get_persons(db: Session):
-    """
-    Get all persons.
-    """
 
-    return db.query(Person).all()
+    persons = db.query(Person).all()
+
+    result = []
+
+    for person in persons:
+
+        logs = (
+            db.query(TrackingLog)
+            .filter(
+                TrackingLog.person_id == person.id
+            )
+            .order_by(
+                TrackingLog.timestamp.desc()
+            )
+            .all()
+        )
+
+        person.last_seen = (
+            logs[0].timestamp if logs else None
+        )
+
+        person.total_detections = len(logs)
+
+        person.cameras_visited = len(
+            {
+                log.camera_id
+                for log in logs
+            }
+        )
+
+        if logs:
+            person.status = "Inside"
+        else:
+            person.status = "Unknown"
+
+        result.append(person)
+
+    return result
 
 
 def update_person(

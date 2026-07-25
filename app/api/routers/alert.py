@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 
+from app.auth.security import verify_token
+
 from app.schemas.alert import (
     AlertCreate,
     AlertUpdate,
@@ -23,6 +25,7 @@ from app.crud.alert import (
     update_alert,
     delete_alert,
 )
+
 
 router = APIRouter(
     prefix="/alerts",
@@ -38,8 +41,10 @@ router = APIRouter(
 def create_new_alert(
     alert: AlertCreate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
     return create_alert(db, alert)
+
 
 
 @router.get(
@@ -48,8 +53,10 @@ def create_new_alert(
 )
 def read_alerts(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
     return get_alerts(db)
+
 
 
 @router.get(
@@ -59,7 +66,9 @@ def read_alerts(
 def read_alert(
     alert_id: UUID,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
+
     db_alert = get_alert(db, alert_id)
 
     if not db_alert:
@@ -71,6 +80,7 @@ def read_alert(
     return db_alert
 
 
+
 @router.put(
     "/{alert_id}",
     response_model=AlertResponse,
@@ -79,7 +89,9 @@ def update_existing_alert(
     alert_id: UUID,
     alert: AlertUpdate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
+
     db_alert = update_alert(
         db,
         alert_id,
@@ -95,6 +107,7 @@ def update_existing_alert(
     return db_alert
 
 
+
 @router.delete(
     "/{alert_id}",
     response_model=AlertResponse,
@@ -102,7 +115,9 @@ def update_existing_alert(
 def delete_existing_alert(
     alert_id: UUID,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(verify_token),
 ):
+
     db_alert = delete_alert(
         db,
         alert_id,

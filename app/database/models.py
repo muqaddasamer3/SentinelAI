@@ -24,6 +24,8 @@ from sqlalchemy.sql import func
 
 from app.database.base import Base
 
+from sqlalchemy.orm import relationship
+
 # Define the Camera model
 
 class Camera(Base):
@@ -117,9 +119,10 @@ class TrackingLog(Base):
     )
 
     timestamp: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-    )
+    DateTime(timezone=True),
+    server_default=func.now(),
+    nullable=False,
+)
 
     event_type: Mapped[str] = mapped_column(
         String(20),
@@ -145,6 +148,8 @@ class TrackingLog(Base):
         DateTime(timezone=True),
         server_default=func.now(),
     )
+    person = relationship("Person")
+    camera = relationship("Camera")
     
 # Define the Incident model
 
@@ -191,14 +196,19 @@ class Incident(Base):
     )
 
     timestamp: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-    )
+    DateTime(timezone=True),
+    server_default=func.now(),
+    nullable=False,
+)
 
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
     )
+    
+    tracking_log = relationship("TrackingLog")
+    person = relationship("Person")
+    camera = relationship("Camera")
     
 # Define the Alert model
 

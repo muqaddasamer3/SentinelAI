@@ -2,7 +2,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.database.models import TrackingLog
+from app.database.models import TrackingLog, Camera, Person
+
 from app.schemas.tracking_log import (
     TrackingLogCreate,
     TrackingLogUpdate,
@@ -20,7 +21,6 @@ def create_tracking_log(
     db_tracking_log = TrackingLog(
         person_id=tracking_log.person_id,
         camera_id=tracking_log.camera_id,
-        timestamp=tracking_log.timestamp,
         event_type=tracking_log.event_type,
         confidence=tracking_log.confidence,
         face_matched=tracking_log.face_matched,
@@ -50,11 +50,39 @@ def get_tracking_log(
 
 
 def get_tracking_logs(db: Session):
-    """
-    Get all tracking logs.
-    """
 
-    return db.query(TrackingLog).all()
+    tracking_logs = (
+        db.query(
+            TrackingLog,
+            Camera,
+            Person
+        )
+        .join(
+            Camera,
+            TrackingLog.camera_id == Camera.id
+        )
+        .join(
+            Person,
+            TrackingLog.person_id == Person.id
+        )
+        .all()
+    )
+
+
+    result = []
+
+
+    for log, camera, person in tracking_logs:
+
+        log.camera_name = camera.camera_name
+        log.camera_location = camera.location
+
+        log.person_code = person.person_code
+
+        result.append(log)
+
+
+    return result
 
 
 def update_tracking_log(

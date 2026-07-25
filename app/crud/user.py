@@ -15,12 +15,12 @@ def create_user(
     user: UserCreate,
 ):
     db_user = User(
-    full_name=user.full_name,
-    email=user.email,
-    password_hash=hash_password(user.password),
-    role=user.role,
-    is_active=user.is_active,
-)
+        full_name=user.full_name,
+        email=user.email,
+        password_hash=hash_password(user.password),
+        role=user.role,
+        is_active=user.is_active,
+    )
 
     db.add(db_user)
     db.commit()
@@ -40,7 +40,9 @@ def get_user(
     )
 
 
-def get_users(db: Session):
+def get_users(
+    db: Session,
+):
     return db.query(User).all()
 
 
@@ -71,11 +73,13 @@ def update_user(
 
     update_data = user.model_dump(exclude_unset=True)
 
+    # Hash password if it is being updated
     if "password" in update_data:
         update_data["password_hash"] = hash_password(
             update_data.pop("password")
         )
 
+    # Update remaining fields
     for key, value in update_data.items():
         setattr(db_user, key, value)
 

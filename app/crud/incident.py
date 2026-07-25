@@ -7,6 +7,7 @@ from app.schemas.incident import (
     IncidentCreate,
     IncidentUpdate,
 )
+from app.database.models import Camera
 
 
 def create_incident(
@@ -20,7 +21,6 @@ def create_incident(
         incident_type=incident.incident_type,
         summary=incident.summary,
         severity=incident.severity,
-        timestamp=incident.timestamp,
     )
 
     db.add(db_incident)
@@ -28,7 +28,6 @@ def create_incident(
     db.refresh(db_incident)
 
     return db_incident
-
 
 def get_incident(
     db: Session,
@@ -40,9 +39,22 @@ def get_incident(
         .first()
     )
 
-
 def get_incidents(db: Session):
-    return db.query(Incident).all()
+
+    incidents = (
+        db.query(Incident, Camera)
+        .join(Camera, Incident.camera_id == Camera.id)
+        .all()
+    )
+
+    result = []
+
+    for incident, camera in incidents:
+        incident.camera_name = camera.camera_name
+        incident.camera_location = camera.location
+        result.append(incident)
+
+    return result
 
 
 def update_incident(

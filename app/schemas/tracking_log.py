@@ -7,7 +7,6 @@ from pydantic import BaseModel
 class TrackingLogBase(BaseModel):
     person_id: UUID
     camera_id: UUID
-    timestamp: datetime
     event_type: str
     confidence: float
     face_matched: bool
@@ -29,6 +28,11 @@ class TrackingLogUpdate(BaseModel):
 class TrackingLogResponse(TrackingLogBase):
     id: UUID
     created_at: datetime
+    timestamp: datetime
+
+    person_code: str | None = None
+    camera_name: str | None = None
+    camera_location: str | None = None
 
     model_config = {
         "from_attributes": True

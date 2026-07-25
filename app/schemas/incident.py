@@ -10,7 +10,6 @@ class IncidentBase(BaseModel):
     incident_type: str
     summary: str
     severity: str
-    timestamp: datetime
 
 
 class IncidentCreate(IncidentBase):
@@ -23,10 +22,13 @@ class IncidentUpdate(BaseModel):
     severity: str | None = None
     timestamp: datetime | None = None
 
-
 class IncidentResponse(IncidentBase):
     id: UUID
     created_at: datetime
+    timestamp: datetime
+
+    camera_name: str | None = None
+    camera_location: str | None = None
 
     model_config = {
         "from_attributes": True

@@ -1,49 +1,64 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Globe,
-    Camera,
     Eye,
     Grid2x2,
     Circle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-const feeds = [
-    {
-        id: 0,
-        title: "All Feeds Overview",
-        icon: <Globe size={18} />,
-        count: "",
-    },
-    {
-        id: 1,
-        title: "Camera 1 - South Warehouse",
-        icon: <Circle size={12} fill="#ef4444" color="#ef4444" />,
-        count: 1,
-    },
-    {
-        id: 2,
-        title: "Camera 2 - Server Lab",
-        icon: <Circle size={12} fill="#ec4899" color="#ec4899" />,
-        count: 1,
-    },
-    {
-        id: 3,
-        title: "Camera 3 - Main Entrance",
-        icon: <Circle size={12} fill="#22c55e" color="#22c55e" />,
-        count: 0,
-    },
-    {
-        id: 4,
-        title: "Camera 4 - Office",
-        icon: <Circle size={12} fill="#22c55e" color="#22c55e" />,
-        count: 0,
-    },
-];
+import { getCameras } from "../../services/cameraService";
 
 export default function FeedOverview() {
-    const [active, setActive] = useState(0);
+
     const navigate = useNavigate();
+
+    const [cameras, setCameras] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const [active, setActive] = useState(0);
+
+    useEffect(() => {
+
+        const loadCameras = async () => {
+
+            try {
+
+                const data = await getCameras();
+
+                setCameras(data);
+
+            } catch (error) {
+
+                console.error("Failed to load cameras", error);
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        };
+
+        loadCameras();
+
+    }, []);
+
+    if (loading) {
+
+        return (
+
+            <div className="text-center text-white text-2xl mt-20">
+
+                Loading Cameras...
+
+            </div>
+
+        );
+
+    }
+
     return (
+
         <section className="py-16">
 
             <div className="mx-auto w-[96%] max-w-[1700px]">
@@ -62,18 +77,14 @@ export default function FeedOverview() {
 
                         </button>
 
-                        <button className="flex items-center gap-3 rounded-3xl bg-white/5 border border-white/10 px-8 py-5 text-slate-400 hover:text-white">
+                        <button
+                            onClick={() => navigate("/incident-dashboard")}
+                            className="flex items-center gap-3 rounded-3xl bg-white/5 border border-white/10 px-8 py-5 text-slate-400 hover:text-white transition"
+                        >
 
                             <Grid2x2 size={20} />
 
-                            <button
-                                onClick={() => navigate("/incident-dashboard")}
-                                className="..."
-                            >
-
-                                Incident Dashboard
-
-                            </button>
+                            <span>Incident Dashboard</span>
 
                             <span className="rounded-full bg-yellow-500 px-2 py-1 text-xs text-black">
 
@@ -97,7 +108,7 @@ export default function FeedOverview() {
 
                             <h3 className="text-white font-semibold">
 
-                                4 / 4 Live
+                                {cameras.length} / {cameras.length} Live
 
                             </h3>
 
@@ -123,34 +134,44 @@ export default function FeedOverview() {
 
                 </div>
 
-                {/* FEED LIST */}
+                {/* CAMERA LIST */}
 
                 <div className="mt-8 flex gap-4 overflow-x-auto pb-3">
 
-                    {feeds.map((feed) => (
+                    <button
+                        onClick={() => setActive(0)}
+                        className={`flex items-center gap-3 rounded-full px-9 py-4 whitespace-nowrap transition ${
+                            active === 0
+                                ? "bg-cyan-400 text-black"
+                                : "bg-[#11161D] border border-white/10 text-slate-300"
+                        }`}
+                    >
+
+                        <Globe size={18} />
+
+                        All Feeds Overview
+
+                    </button>
+
+                    {cameras.map((camera, index) => (
 
                         <button
-                            key={feed.id}
-                            onClick={() => setActive(feed.id)}
-                            className={`flex items-center gap-3 rounded-full px-9 py-4 whitespace-nowrap transition
-
-              ${active === feed.id
+                            key={camera.id}
+                            onClick={() => setActive(index + 1)}
+                            className={`flex items-center gap-3 rounded-full px-9 py-4 whitespace-nowrap transition ${
+                                active === index + 1
                                     ? "bg-cyan-400 text-black"
                                     : "bg-[#11161D] border border-white/10 text-slate-300"
-                                }`}
+                            }`}
                         >
 
-                            {feed.icon}
+                            <Circle
+                                size={12}
+                                fill="#22c55e"
+                                color="#22c55e"
+                            />
 
-                            {feed.title}
-
-                            {feed.count > 0 && (
-                                <span className="rounded-full bg-gray-500 px-2 py-1 text-xs text-black">
-
-                                    {feed.count}
-
-                                </span>
-                            )}
+                            {camera.camera_name}
 
                         </button>
 
@@ -166,25 +187,36 @@ export default function FeedOverview() {
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-                            {[1, 2, 3, 4].map((cam) => (
+                            {cameras.map((camera, index) => (
 
                                 <div
-                                    key={cam}
+                                    key={camera.id}
                                     className="overflow-hidden rounded-2xl border border-white/10 bg-black"
                                 >
 
                                     <img
-                                        src={`https://picsum.photos/600/400?random=${cam}`}
+                                        src={`https://picsum.photos/600/400?random=${index}`}
+                                        alt={camera.camera_name}
                                         className="h-52 w-full object-cover"
                                     />
 
                                     <div className="flex items-center justify-between p-4">
 
-                                        <p className="text-white">
+                                        <div>
 
-                                            Camera {cam}
+                                            <p className="text-white">
 
-                                        </p>
+                                                {camera.camera_name}
+
+                                            </p>
+
+                                            <p className="text-slate-400 text-sm">
+
+                                                {camera.location}
+
+                                            </p>
+
+                                        </div>
 
                                         <span className="flex items-center gap-2 text-green-400 text-sm">
 
@@ -193,7 +225,7 @@ export default function FeedOverview() {
                                                 fill="#22c55e"
                                             />
 
-                                            LIVE
+                                            {camera.status}
 
                                         </span>
 
@@ -213,6 +245,7 @@ export default function FeedOverview() {
 
                                 <img
                                     src={`https://picsum.photos/1400/700?random=${active}`}
+                                    alt={cameras[active - 1].camera_name}
                                     className="h-[550px] w-full object-cover"
                                 />
 
@@ -224,21 +257,21 @@ export default function FeedOverview() {
 
                                     <h2 className="text-3xl font-semibold text-white">
 
-                                        {feeds[active].title}
+                                        {cameras[active - 1].camera_name}
 
                                     </h2>
 
                                     <p className="mt-2 text-slate-400">
 
-                                        AI Monitoring Active
+                                        {cameras[active - 1].location}
 
                                     </p>
 
                                 </div>
 
-                                <div className="rounded-2xl bg-green-500/10 px-6 py-4 text-green-400">
+                                <div className="rounded-2xl bg-green-500/10 px-6 py-4 text-green-400 font-semibold">
 
-                                    LIVE
+                                    {cameras[active - 1].status}
 
                                 </div>
 
@@ -253,5 +286,7 @@ export default function FeedOverview() {
             </div>
 
         </section>
+
     );
+
 }
